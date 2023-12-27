@@ -11,7 +11,7 @@ pub struct Command<'a> {
 
 pub struct Parser {
     commands: Vec<Command<'static>>,
-    callback: Option<fn() -> String>,
+    callback: Option<fn(String) -> String>,
 }
 
 fn command(input: &str) -> Option<(String, String)> {
@@ -160,8 +160,10 @@ impl Parser {
             if !self.contains(&k) {
                 match self.callback {
                     Some(x) => {
-                        println!("{}", (x)());
-                        exit(-1)
+                        if k.contains("-") {
+                            println!("{}", (x)(k.clone()));
+                            exit(-1)
+                        }
                     },
                     None => {
                         to_rem.push(k.to_string());
@@ -173,6 +175,8 @@ impl Parser {
         for rem in to_rem {
             to_ret.remove(&rem);
         }
+
+        to_ret.retain(|key, _| !key.is_empty());
     
         to_ret
     }
@@ -181,7 +185,7 @@ impl Parser {
       
 }
 
-pub fn start(wrong_arg_callback: Option<fn() -> String>) -> Parser {
+pub fn start(wrong_arg_callback: Option<fn(String) -> String>) -> Parser {
     Parser {
         commands: Vec::new(),
         callback: wrong_arg_callback,

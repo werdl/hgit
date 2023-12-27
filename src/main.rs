@@ -6,21 +6,15 @@ use std::process::Command;
 use std::process::exit;
 
 
-fn bad_arg() -> String {
-    return "Incorrect arguments provided".to_string()
-}
-
-fn git_hgit(i: String) -> String {
-    return i.replace("git", "hgit").replace("Git", "HGit")
+fn bad_arg(arg: String) -> String {
+    return format!("Bad arg - {}", arg);
 }
 
 fn call_git(args: Vec<String>) {
-    let output = Command::new("git")
+    let _ = Command::new("git")
         .args(args)
-        .output()
+        .status()
         .expect("Failed to execute command");
-
-    println!("{}\n{}", git_hgit(String::from_utf8(output.stdout).unwrap()), git_hgit(String::from_utf8(output.stderr).unwrap()));
 
 }
 
@@ -31,8 +25,20 @@ fn version_callback(_:Option<String>) -> String {
     .expect("Failed to execute command").stdout).unwrap().replace("\n", ""), env!("CARGO_PKG_VERSION"));
 }
 
+fn remove_flags(args: Vec<String>) -> Vec<String> {
+    let mut res: Vec<String> = Vec::new();
+
+    for arg in args {
+        if arg.chars().nth(0).unwrap() != '-' {
+            res.push(arg);
+        }
+    }
+
+    res
+}
+
 fn main() {
-    let mut args: Vec<String> = env::args().collect();
+    let args: Vec<String> = env::args().collect();
     let zero = match args.get(1) {
         None => {
             println!("hgit version {}, licensed under the Apache License v2.0", env!("CARGO_PKG_VERSION"));
@@ -42,7 +48,35 @@ fn main() {
             x
         }
     };
-    match zero {
+    match zero.as_str() {
+        "get" => {
+            /*
+                * The get command - accepts a provider (default GitHub), then pulls from that source
+                * flags: --github (-g), --gitlab (-l)
+            */
+            
+            let mut provider = "github".to_string();
+
+            let mut parser = cmd::start(Some(bad_arg));
+            parser.add_option('g', "github", true);
+            parser.add_option('l', "gitlab", true);
+            let trimmed = args.get(1..).unwrap().to_vec();
+            let result = parser.parse(trimmed.clone(), 0);
+            
+            for (k, _v) in result.iter() {
+                provider = k.to_string();
+            }
+
+            let mut args_git: Vec<String> = Vec::new();
+            args_git.push("clone".to_string());
+            let mut new_args = remove_flags(args.get(2..).unwrap().to_vec());
+
+            new_args[0] = format!("http://www.{}.com/{}.git", provider, new_args[0]);
+            args_git.append(&mut new_args);
+
+            call_git(args_git);
+        }
+
         // by default, just call git, but allow flags like --version
         _ => {
             let mut parser = cmd::start(None);
