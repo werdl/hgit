@@ -11,6 +11,7 @@ fn bad_arg(arg: String) -> String {
 }
 
 fn call_git(args: Vec<String>) {
+    println!("args: {:?}", args);
     let _ = Command::new("git")
         .args(args)
         .status()
@@ -90,8 +91,7 @@ fn main() {
                 * Very simple - just use hgit go, then all other args get appended.
             */
             call_str("add .");
-            println!("{}", format!("commit -m \"{}\"", &args.get(2..).unwrap().to_vec().join(" ")));
-            call_str(format!("commit -m \"{}\"", &args.get(2..).unwrap().to_vec().join(" ")));
+            call_git(vec!["commit".to_string(), "-m".to_string(), format!("\"{}\"", &args.get(2..).unwrap().to_vec().join(" "))]);
             call_str("push");
         }
 
