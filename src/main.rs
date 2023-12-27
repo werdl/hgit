@@ -18,6 +18,13 @@ fn call_git(args: Vec<String>) {
 
 }
 
+fn call_str<T: ToString>(cmd: T) {
+    let cmd_final: String = cmd.to_string();
+    call_git(cmd_final.split_whitespace()
+    .map(|s| s.to_string())
+    .collect());
+}
+
 fn version_callback(_:Option<String>) -> String {
     return format!("{}, hgit version {}", String::from_utf8(Command::new("git")
     .args(vec!["--version"])
@@ -75,6 +82,17 @@ fn main() {
             args_git.append(&mut new_args);
 
             call_git(args_git);
+        }
+
+        "go" => {
+            /*
+                * The go command - a shorthand for (add ., commit -m, push)
+                * Very simple - just use hgit go, then all other args get appended.
+            */
+            call_str("add .");
+            println!("{}", format!("commit -m \"{}\"", &args.get(2..).unwrap().to_vec().join(" ")));
+            call_str(format!("commit -m \"{}\"", &args.get(2..).unwrap().to_vec().join(" ")));
+            call_str("push");
         }
 
         // by default, just call git, but allow flags like --version
