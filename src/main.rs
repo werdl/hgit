@@ -2,47 +2,15 @@ mod callee;
 mod cmd;
 
 use std::env;
-use std::process::Command;
 use std::process::exit;
 
+use callee::*;
 
 fn bad_arg(arg: String) -> String {
     return format!("Bad arg - {}", arg);
 }
 
-fn call_git(args: Vec<String>) {
-    let _ = Command::new("git")
-        .args(args)
-        .status()
-        .expect("Failed to execute command");
 
-}
-
-fn call_str<T: ToString>(cmd: T) {
-    let cmd_final: String = cmd.to_string();
-    call_git(cmd_final.split_whitespace()
-    .map(|s| s.to_string())
-    .collect());
-}
-
-fn version_callback(_:Option<String>) -> String {
-    return format!("{}, hgit version {}", String::from_utf8(Command::new("git")
-    .args(vec!["--version"])
-    .output()
-    .expect("Failed to execute command").stdout).unwrap().replace("\n", ""), env!("CARGO_PKG_VERSION"));
-}
-
-fn remove_flags(args: Vec<String>) -> Vec<String> {
-    let mut res: Vec<String> = Vec::new();
-
-    for arg in args {
-        if arg.chars().nth(0).unwrap() != '-' {
-            res.push(arg);
-        }
-    }
-
-    res
-}
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -90,7 +58,7 @@ fn main() {
                 * Very simple - just use hgit go, then all other args get appended.
             */
             call_str("add .");
-            call_git(vec!["commit".to_string(), "-m".to_string(), format!("\"{}\"", &args.get(2..).unwrap().to_vec().join(" "))]);
+            call_git(vec!["commit".to_string(), "-m".to_string(), format!("{}", &args.get(2..).unwrap().to_vec().join(" "))]);
             call_str("push");
         }
 
