@@ -62,15 +62,18 @@ fn main() {
             call_str("push");
         }
 
-        // by default, just call git, but allow flags like --version
+        "version" => {
+            /*
+                * version command
+                * gives git and hgit version
+            */
+           println!("{}", version_callback(None));
+        }
+
+        // by default, just call git
         _ => {
-            let mut parser = cmd::start(None);
-            parser.add_callback('v', "version", version_callback, true);
             let trimmed = args.get(1..).unwrap().to_vec();
-            let result = parser.parse(trimmed.clone(), 0);
-            if result.is_empty() {
-                call_git(trimmed.clone());
-            }
+            call_git(trimmed);
         }
     }
 
