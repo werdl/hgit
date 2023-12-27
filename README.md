@@ -9,8 +9,11 @@
 - supports github (`--github | -g`) and gitlab (`--gitlab | -l`)
 #### Examples
 `hgit get werdl/hgit` - default pulls from github
+
 `hgit get -l inkscape/inkscape` - from gitlab
+
 `hgit get -g -l --github spartanproj/os` - last flag takes priority
+
 ### `go [commit message]`
 - performs these operations, after concatenating all future arguments to one for `commit -m`
 ```bash
