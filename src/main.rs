@@ -11,7 +11,6 @@ fn bad_arg(arg: String) -> String {
 }
 
 fn call_git(args: Vec<String>) {
-    println!("args: {:?}", args);
     let _ = Command::new("git")
         .args(args)
         .status()
