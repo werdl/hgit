@@ -2,26 +2,58 @@ mod callee;
 mod cmd;
 
 use std::env;
+use std::process::Command;
+use std::process::exit;
 
-fn cb() -> String {
-    return "welp we failed".to_string()
+
+fn bad_arg() -> String {
+    return "Incorrect arguments provided".to_string()
 }
 
-fn cb2(arg: Option<String>) -> String {
-    match arg {
-        None => {
-            return "oh, no fun :-(".to_string();
-        },
-        Some(x) => {
-            return format!("we got {}", x);
-        }
-    }
+fn git_hgit(i: String) -> String {
+    return i.replace("git", "hgit").replace("Git", "HGit")
+}
+
+fn call_git(args: env::Args) {
+    let args: Vec<String> = args.collect();
+
+    let output = Command::new("git")
+        .args(args)
+        .output()
+        .expect("Failed to execute command");
+
+    println!("{}\n{}", git_hgit(String::from_utf8(output.stdout).unwrap()), git_hgit(String::from_utf8(output.stderr).unwrap()));
+
+}
+
+fn version_callback(_:Option<String>) -> String {
+    return format!("{}, hgit version {}", String::from_utf8(Command::new("git")
+    .args(vec!["--version"])
+    .output()
+    .expect("Failed to execute command").stdout).unwrap().replace("\n", ""), env!("CARGO_PKG_VERSION"));
 }
 
 fn main() {
-    let mut parser = cmd::start("test", "test thingy", cb);
-    parser.add_option('c', "colour", false);
-    parser.add_option('p', "present", true);
-    parser.add_callback('q', "quash", cb2, false);
-    println!("{:?}", parser.parse(env::args()));
+    let mut args = env::args();
+    let zero = match args.nth(1) {
+        None => {
+            println!("hgit version {}, licensed under the Apache License v2.0", env!("CARGO_PKG_VERSION"));
+            exit(-1);
+        },
+        Some(x) => {
+            x
+        }
+    };
+    match zero {
+        // by default, just call git, but allow flags like --version
+        _ => {
+            let mut parser = cmd::start(None);
+            parser.add_callback('v', "version", version_callback, true);
+            let result = parser.parse(env::args(), 0);
+            if result.is_empty() {
+                call_git(args);
+            }
+        }
+    }
+
 }

@@ -11,9 +11,7 @@ pub struct Command<'a> {
 
 pub struct Parser {
     commands: Vec<Command<'static>>,
-    desc: &'static str,
-    name: &'static str,
-    callback: fn() -> String,
+    callback: Option<fn() -> String>,
 }
 
 fn command(input: &str) -> Option<(String, String)> {
@@ -25,17 +23,7 @@ fn command(input: &str) -> Option<(String, String)> {
     }
 }
 
-
-/// Used if an option is a flag
-pub fn does_nothing(_: Option<String>) -> String {
-    "".to_string()
-}
-
 impl Parser {
-    fn has_func(&self, inp: Option<fn(Option<String>) -> String>) -> bool {
-        inp.is_some()
-    }
-
     fn check_for_clash(&self, short: char, long: &str) -> bool {
         self.contains(&short.to_string()) || self.contains(long) || short.to_string() == long.to_string()
     }
@@ -96,23 +84,20 @@ impl Parser {
         self.command(name).map_or(false, |cmd| cmd.is_flag)
     }
 
-    pub fn parse(&mut self, args: std::env::Args) -> HashMap<String, String> {
+    pub fn parse(&mut self, args: std::env::Args, skip: usize) -> HashMap<String, String> {
         let mut to_ret = HashMap::new();
         let mut cur_flag = String::new();
-        let mut single_double = "";
     
-        let mut args_iter = args.skip(1); // Skip the first argument (program name)
+        let mut args_iter = args.skip(1 + skip); // Skip the first argument (program name)
     
         while let Some(arg) = args_iter.next() {
             if arg.starts_with('-') {
                 match arg.chars().nth(1).unwrap_or('-') {
                     '-' => {
                         cur_flag = arg.get(2..).unwrap_or("").to_string();
-                        single_double = "double";
                     }
                     x => {
                         cur_flag = x.to_string();
-                        single_double = "single";
                     }
                 }
     
@@ -169,10 +154,17 @@ impl Parser {
             }
         }
 
-        for (k, v) in &to_ret {
+        for (k, _v) in &to_ret {
             if !self.contains(k) {
-                println!("{}", (self.callback)());
-                exit(-1)
+                match self.callback {
+                    Some(x) => {
+                        println!("{}", (x)());
+                        exit(-1)
+                    },
+                    None => {
+                        // no issue
+                    }
+                };
             }
         }
     
@@ -183,10 +175,8 @@ impl Parser {
       
 }
 
-pub fn start(name: &'static str, desc: &'static str, wrong_arg_callback: fn() -> String) -> Parser {
+pub fn start(wrong_arg_callback: Option<fn() -> String>) -> Parser {
     Parser {
-        name,
-        desc,
         commands: Vec::new(),
         callback: wrong_arg_callback,
     }
