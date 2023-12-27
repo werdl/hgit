@@ -20,8 +20,7 @@ fn call_git(args: Vec<String>) {
         .output()
         .expect("Failed to execute command");
 
-    // println!("{}\n{}", git_hgit(String::from_utf8(output.stdout).unwrap()), git_hgit(String::from_utf8(output.stderr).unwrap()));
-    println!("{:?}", output);
+    println!("{}\n{}", git_hgit(String::from_utf8(output.stdout).unwrap()), git_hgit(String::from_utf8(output.stderr).unwrap()));
 
 }
 
@@ -51,7 +50,6 @@ fn main() {
             let trimmed = args.get(1..).unwrap().to_vec();
             let result = parser.parse(trimmed.clone(), 0);
             if result.is_empty() {
-                println!("{:?}", trimmed.clone());
                 call_git(trimmed.clone());
             }
         }
