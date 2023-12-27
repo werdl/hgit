@@ -14,15 +14,14 @@ fn git_hgit(i: String) -> String {
     return i.replace("git", "hgit").replace("Git", "HGit")
 }
 
-fn call_git(args: env::Args) {
-    let args: Vec<String> = args.collect();
-
+fn call_git(args: Vec<String>) {
     let output = Command::new("git")
         .args(args)
         .output()
         .expect("Failed to execute command");
 
-    println!("{}\n{}", git_hgit(String::from_utf8(output.stdout).unwrap()), git_hgit(String::from_utf8(output.stderr).unwrap()));
+    // println!("{}\n{}", git_hgit(String::from_utf8(output.stdout).unwrap()), git_hgit(String::from_utf8(output.stderr).unwrap()));
+    println!("{:?}", output);
 
 }
 
@@ -34,8 +33,8 @@ fn version_callback(_:Option<String>) -> String {
 }
 
 fn main() {
-    let mut args = env::args();
-    let zero = match args.nth(1) {
+    let mut args: Vec<String> = env::args().collect();
+    let zero = match args.get(1) {
         None => {
             println!("hgit version {}, licensed under the Apache License v2.0", env!("CARGO_PKG_VERSION"));
             exit(-1);
@@ -49,9 +48,11 @@ fn main() {
         _ => {
             let mut parser = cmd::start(None);
             parser.add_callback('v', "version", version_callback, true);
-            let result = parser.parse(env::args(), 0);
+            let trimmed = args.get(1..).unwrap().to_vec();
+            let result = parser.parse(trimmed.clone(), 0);
             if result.is_empty() {
-                call_git(args);
+                println!("{:?}", trimmed.clone());
+                call_git(trimmed.clone());
             }
         }
     }

@@ -84,11 +84,11 @@ impl Parser {
         self.command(name).map_or(false, |cmd| cmd.is_flag)
     }
 
-    pub fn parse(&mut self, args: std::env::Args, skip: usize) -> HashMap<String, String> {
+    pub fn parse(&mut self, args: Vec<String>, skip: usize) -> HashMap<String, String> {
         let mut to_ret = HashMap::new();
         let mut cur_flag = String::new();
     
-        let mut args_iter = args.skip(1 + skip); // Skip the first argument (program name)
+        let mut args_iter = args.into_iter().skip(1 + skip); // Skip the first argument (program name)
     
         while let Some(arg) = args_iter.next() {
             if arg.starts_with('-') {
@@ -154,18 +154,24 @@ impl Parser {
             }
         }
 
+        let mut to_rem: Vec<String> = Vec::new();
+
         for (k, _v) in &to_ret {
-            if !self.contains(k) {
+            if !self.contains(&k) {
                 match self.callback {
                     Some(x) => {
                         println!("{}", (x)());
                         exit(-1)
                     },
                     None => {
-                        // no issue
+                        to_rem.push(k.to_string());
                     }
                 };
             }
+        }
+
+        for rem in to_rem {
+            to_ret.remove(&rem);
         }
     
         to_ret
