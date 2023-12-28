@@ -29,3 +29,8 @@ push
 - options must include `--name=<your_name>`
 ### Examples
 `hgit start --name=cc werdl/c_project`
+
+## `info`
+- provides a much shorter output of all commits to main
+### Examples
+`hgit info`
