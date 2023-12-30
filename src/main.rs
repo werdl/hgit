@@ -199,11 +199,13 @@ fn main() {
                 "git log --format='%aN' | sort | uniq -c | sort -rn"
             );
 
-            let contributors = raw_c.trim().split("\n");
+            let contributors = raw_c.trim().split("\n").map(|x| x.trim());
+
+
 
             for contrib in contributors.into_iter() {
-                let clauses: Vec<&str> = contrib.split(" ").collect();
-                top_contrib.insert(clauses[1].to_string(), clauses[0].parse().unwrap());
+                let clauses: Vec<&str> = contrib.splitn(2, " ").collect();
+                top_contrib.insert(clauses[1].to_string(), clauses[0].parse().unwrap_or(0));
             }
 
             let loc = call(
