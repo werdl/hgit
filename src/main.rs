@@ -169,14 +169,14 @@ fn main() {
                 println!("\t{}. {} - {} commits", i, random(person), commits.to_string().green());
             }
         }
-
+        
         "update" => {
             /*
              * the update command - stashes your changes, pulls and then pops your changes back.
              */
 
-            call_str("git stash"); // stash local changes
-            call_str("git pull"); // pull from origin
+            call("git stash"); // stash local changes
+            call("git pull"); // pull from origin
             let res = Command::new("git")
                 .arg("stash")
                 .arg("pop")
@@ -186,6 +186,7 @@ fn main() {
                     match x.status.code().unwrap() {
                         128 => {
                             println!("Merge conflict detected - please manually resolve.");
+                            call("git stash apply stash@{0}");
                         },
                         _ => {
                             println!("Updates merged from origin");
