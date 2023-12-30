@@ -152,9 +152,8 @@ fn main() {
 
             let raw_lf = call("git diff --name-only");
 
-            let loose_files = raw_lf.trim().split("\n").collect::<Vec<&str>>();
+            let loose_files: Vec<&str> = raw_lf.lines().filter(|x| !x.is_empty()).collect();
 
-            println!("{:?}", loose_files);
 
             println!("{} (default branch {}, current {}), with {} lines. {} files have uncommited changes ({}) \nContributors:",
                 random(name.trim()),
