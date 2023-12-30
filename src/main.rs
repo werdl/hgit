@@ -136,9 +136,9 @@ fn main() {
                 "git log --format='%aN' | sort | uniq -c | sort -rn"
             );
 
-            let ctb = raw_c.trim().split("\n");
+            let lemmechange = raw_c.trim().split("\n");
 
-            for contrib in contributors.into_iter() {
+            for contrib in lemmechange.into_iter() {
                 let clauses: Vec<&str> = contrib.split(" ").collect();
                 top_contrib.insert(clauses[1].to_string(), clauses[0].parse().unwrap());
             }
