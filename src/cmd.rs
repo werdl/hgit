@@ -8,7 +8,7 @@ pub struct Command<'a> {
     callback: Option<fn(Option<String>) -> String>,
     is_flag: bool,
 }
-
+ 
 pub struct Parser {
     commands: Vec<Command<'static>>,
     callback: Option<fn(String) -> String>,

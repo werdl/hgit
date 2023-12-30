@@ -1,14 +1,29 @@
 mod callee;
 mod cmd;
 
+extern crate rand;
+extern crate colored;
+
+
 use std::env;
 use std::process::exit;
 use std::process::Command;
+use std::collections::HashMap;
+use colored::ColoredString;
+use rand::Rng;
 
 use callee::*;
 
+
+use colored::Colorize;
+use colored::customcolors::CustomColor;
+
 fn bad_arg(arg: String) -> String {
     return format!("Bad arg - {}", arg);
+}
+
+fn random<T: ToString>(command: T) -> ColoredString {
+    return command.to_string().custom_color(CustomColor::new(rand::thread_rng().gen_range(0..=255), rand::thread_rng().gen_range(0..=255), rand::thread_rng().gen_range(0..=255)))
 }
 
 fn call<T: ToString>(command: T) -> String {
@@ -94,16 +109,96 @@ fn main() {
                     .collect();
                 let name = call(format!("git log -n1 --pretty=format:%s {}", hash));
                 println!(
-                    "{} {} by {} ({}) \x1B[32m+{}\x1B[0m  \x1B[31m-{}\x1B[0m",
+                    "{} {} by {} ({}) +{} -{}",
                     date,
                     hash,
                     author,
                     name,
-                    if lines[0].trim() == "" { "0" } else { &lines[0] },
-                    if lines[1].trim() == "" { "0" } else { &lines[1] },
+                    (if lines[0].trim() == "" { "0" } else { &lines[0] }).green(),
+                    (if lines[1].trim() == "" { "0" } else { &lines[1] }).red(),
                 );
             }
         }
+        "data" => {
+            /*
+                * The data command
+                * for displaying repo info, bitesize!
+            */
+
+            let default = call("git rev-parse --abbrev-ref HEAD");
+            let temp = call("git branch");
+            let mut temp2 = temp.split(" ").collect::<Vec<&str>>();
+            temp2.reverse();
+            let current = temp2.get(0).unwrap();
+
+            let mut top_contrib: HashMap<String, i64> = HashMap::new();
+
+            let raw_c = call(
+                "git log --format='%aN' | sort | uniq -c | sort -rn"
+            );
+
+            let contributors = raw_c.trim().split("\n");
+
+            for contrib in contributors.into_iter() {
+                let clauses: Vec<&str> = contrib.split(" ").collect();
+                top_contrib.insert(clauses[1].to_string(), clauses[0].parse().unwrap());
+            }
+
+            let loc = call(
+                "git ls-files | grep -v -e '\\.md$' -e 'LICENSE$' | xargs wc -l | tail -1 | grep -o '[0-9]\\+'"
+            );
+
+
+            let name = call("basename $(git rev-parse --show-toplevel)");
+
+            let raw_lf = call("git diff --name-only");
+
+            let loose_files = raw_lf.trim().split("\n").collect::<Vec<&str>>();
+
+            println!("{} (default branch {}, current {}), with {} lines. {} files have uncommited changes ({}) \nContributors:",
+                random(name.trim()),
+                default.trim().blue(),
+                current.trim().yellow(),
+                loc.trim().green(),
+                loose_files.len().to_string().red(),
+                loose_files.join(", ").cyan()
+            );
+            let mut i = 0;
+            for (person, commits) in top_contrib {
+                i+=1;
+                println!("\t{}. {} - {} commits", i, random(person), commits.to_string().green());
+            }
+        }
+
+        "update" => {
+            /*
+             * the update command - stashes your changes, pulls and then pops your changes back.
+             */
+
+            call_str("git stash"); // stash local changes
+            call_str("git pull"); // pull from origin
+            let res = Command::new("git")
+                .arg("stash")
+                .arg("pop")
+                .output();
+            match res {
+                Ok(x) => {
+                    match x.status.code().unwrap() {
+                        128 => {
+                            println!("Merge conflict detected - please manually resolve.");
+                        },
+                        _ => {
+                            println!("Updates merged from origin");
+                        }
+                    }
+                },
+                Err(x) => {
+                    println!("Errored out with {}", x);
+                    exit(-1);
+                }
+            }
+        }
+
         "get" => {
             /*
              * The get command - accepts a provider (default GitHub), then pulls from that source
