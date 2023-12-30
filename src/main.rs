@@ -154,6 +154,8 @@ fn main() {
 
             let loose_files = raw_lf.trim().split("\n").collect::<Vec<&str>>();
 
+            println!("{:?}", loose_files);
+
             println!("{} (default branch {}, current {}), with {} lines. {} files have uncommited changes ({}) \nContributors:",
                 random(name.trim()),
                 default.trim().blue(),
