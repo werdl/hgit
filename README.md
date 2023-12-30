@@ -44,3 +44,6 @@ push
 
 ## `activity`
 - shows recent activity on all branches
+
+## `contrib`
+- gives a breakdown of all repo contributors

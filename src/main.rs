@@ -20,6 +20,37 @@ use colored::customcolors::CustomColor;
 
 use chrono::{Local, Duration, TimeZone};
 
+fn display_commit_stats(log_output: &str) {
+    let mut authors: HashMap<String, i32> = HashMap::new();
+    let mut current_author: String = String::new();
+
+    for line in log_output.lines() {
+        if line.starts_with("Author:") {
+            current_author = line.trim_start_matches("Author:").trim().split(" ").into_iter().collect::<Vec<&str>>().get(0).unwrap().to_string();
+        } else if let Some((added, removed)) = extract_numbers(line) {
+            *authors.entry(current_author.clone()).or_insert(0) += added as i32;
+            *authors.entry(current_author.clone()).or_insert(0) -= removed as i32;
+        }
+    }
+    let mut i: i32 = 0;
+    let mut sorted_pairs: Vec<_> = authors.into_iter().collect();
+    sorted_pairs.sort_by(|(_, a), (_, b)| a.cmp(b));
+
+    for (user, loc) in sorted_pairs {
+        i+=1;
+        println!("{}. {} - {}{} lines, {} commits", i, user, if loc>=0 {"+"} else {"-"}, if loc>0 {loc.to_string().green()} else {loc.to_string().green()}, call(format!("git log --author={} --oneline | wc -l ", user)).trim());
+    }
+}
+
+fn extract_numbers(line: &str) -> Option<(u32, u32)> {
+    if line.contains("+") && line.contains("-") {
+        let splitted: Vec<&str> = line.split(" ").into_iter().collect();
+        return Some((splitted.get(4).unwrap().to_string().parse().unwrap(), splitted.get(6).unwrap().to_string().parse().unwrap()));
+    }
+    None
+    
+}
+
 #[allow(deprecated)]
 fn calculate_time_difference(timestamp: &str) -> String {
     let timestamp_datetime = Local.datetime_from_str(timestamp, "%a %b %d %H:%M:%S %Y")
@@ -365,6 +396,15 @@ fn main() {
                 format!("{}", &args.get(2..).unwrap().to_vec().join(" ")),
             ]);
             call_str("push");
+        }
+
+        "contrib" => {
+            /*
+             * The contrib command
+             * Display's each contributor's number of LOC
+             */
+
+            display_commit_stats(call("git log --shortstat").as_str());
         }
 
         "version" => {
