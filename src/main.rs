@@ -3,7 +3,8 @@ mod cmd;
 
 extern crate rand;
 extern crate colored;
-
+extern crate webbrowser;
+extern crate chrono;
 
 use std::env;
 use std::process::exit;
@@ -16,6 +17,35 @@ use callee::*;
 
 use colored::Colorize;
 use colored::customcolors::CustomColor;
+
+use chrono::{Local, Duration, TimeZone};
+
+#[allow(deprecated)]
+fn calculate_time_difference(timestamp: &str) -> String {
+    let timestamp_datetime = Local.datetime_from_str(timestamp, "%a %b %d %H:%M:%S %Y")
+        .expect("Failed to parse timestamp");
+
+    let current_time = Local::now();
+
+    let time_difference = current_time
+        .signed_duration_since(timestamp_datetime);
+
+    if time_difference < Duration::seconds(60) {
+        format!("{} seconds ago", time_difference.num_seconds())
+    } else if time_difference < Duration::minutes(60) {
+        let minutes = time_difference.num_minutes();
+        let seconds = time_difference.num_seconds() % 60;
+        format!("{} minutes, {} seconds ago", minutes, seconds)
+    } else if time_difference < Duration::hours(24) {
+        let hours = time_difference.num_hours();
+        let minutes = (time_difference.num_minutes() % 60).abs();
+        format!("{} hours, {} minutes ago", hours, minutes)
+    } else {
+        let days = time_difference.num_days();
+        let hours = (time_difference.num_hours() % 24).abs();
+        format!("{} days, {} hours ago", days, hours)
+    }
+}
 
 fn bad_arg(arg: String) -> String {
     return format!("Bad arg - {}", arg);
@@ -118,13 +148,15 @@ fn main() {
                 );
             }
         }
+        
         "data" => {
             /*
                 * The data command
                 * for displaying repo info, bitesize!
             */
 
-            let default = call("git rev-parse --abbrev-ref HEAD");
+            let default_raw = call(" git symbolic-ref refs/remotes/origin/HEAD --short");
+            let default = default_raw.split("/").into_iter().collect::<Vec<&str>>().get(1).unwrap().to_string();
             let temp = call("git branch");
             let mut temp2 = temp.split(" ").collect::<Vec<&str>>();
             temp2.reverse();
@@ -198,6 +230,52 @@ fn main() {
                     exit(-1);
                 }
             }
+        }
+
+        "web" => {
+            /*
+             * The web command - quickly opens remote url
+             */
+
+            let remote = call("git config --get remote.origin.url");
+
+            _ = webbrowser::open(remote.as_str());
+        }
+
+        "activity" => {
+            /*
+             * The activity command - shows all branches, and how long since their last commit
+             */
+
+            let branches_raw = call(r"git branch | sed 's/\*//g' | tr -d '\n' && echo");
+
+            let branches: Vec<&str> = branches_raw.trim().split(" ").collect();
+            
+            let default_raw = call(" git symbolic-ref refs/remotes/origin/HEAD --short");
+            let default = default_raw.split("/").into_iter().collect::<Vec<&str>>().get(1).unwrap().to_string();
+
+
+
+            for branch in branches {
+                let command = call(format!(
+                    "git show --shortstat {} | tail -1 | awk '{{print $4, $6}}'",
+                    branch
+                ));
+                let lines: Vec<String> = command
+                    .split(' ')
+                    .map(|x| x.replace("\n", ""))
+                    .into_iter()
+                    .collect();
+
+                let last_commit = call(format!("git log --pretty=%cd --date=local -n1 {}", branch));
+                println!(
+                    "{} - last commit {} (+{} -{})", 
+                    if branch==default.trim() { branch.green() } else { branch.white().normal() }, calculate_time_difference(last_commit.trim()),
+                    (if lines[0].trim() == "" { "0" } else { &lines[0] }).green(),
+                    (if lines[1].trim() == "" { "0" } else { &lines[1] }).red(),
+                );
+            }
+
         }
 
         "get" => {
