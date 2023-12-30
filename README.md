@@ -32,15 +32,15 @@ push
 
 ## `info`
 - provides a much shorter output of all commits to main
-### Examples
-`hgit info`
 
 ## `data`
 - shows the current status of the repository
-### Examples
-`hgit data`
 
 ## `update`
 - grabs from remote
-### Examples
-`hgit update`
+
+## `web`
+- opens in web browser
+
+## `activity`
+- shows recent activity on all branches
