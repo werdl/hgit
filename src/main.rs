@@ -136,7 +136,7 @@ fn main() {
                 "git log --format='%aN' | sort | uniq -c | sort -rn"
             );
 
-            let contributors = raw_c.trim().split("\n");
+            let ctb = raw_c.trim().split("\n");
 
             for contrib in contributors.into_iter() {
                 let clauses: Vec<&str> = contrib.split(" ").collect();
