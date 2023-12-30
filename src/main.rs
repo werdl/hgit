@@ -176,7 +176,8 @@ fn main() {
             }
 
             let loc = call(
-                "git ls-files | grep -v -e '\\.md$' -e 'LICENSE$' | xargs wc -l | tail -1 | grep -o '[0-9]\\+'"
+                "git ls-files | grep -v -e '\\.md$' -e 'LICENSE$' -e 'Car
+                go.lock$' | xargs wc -l | tail -1 | grep -o '[0-9]\\+'"
             );
 
 
